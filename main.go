@@ -20,12 +20,58 @@ import (
 
 const CELL_SIZE = 50
 
+type point struct {
+	x, y int
+}
+
+type Direction int
+
+const (
+	UP Direction = iota
+	DOWN
+	LEFT
+	RIGHT
+)
+
+type Snake struct {
+	body      []point
+	direction Direction
+}
+
 func main() {
 
-	snake := Snake{body: []point{{10, 10}, {10, 11}, {10, 12}, {11, 12}, {12, 12}}}
+	snake := Snake{
+		body:      []point{{10, 10}, {10, 11}, {10, 12}, {11, 12}, {12, 12}},
+		direction: RIGHT,
+	}
 
 	go func() {
 		window := new(app.Window)
+
+		ticker := time.NewTicker(time.Second)
+		go func() {
+			for range ticker.C {
+				fmt.Println(snake.body)
+				snake.body = snake.body[1:len(snake.body)]
+				tail := snake.body[len(snake.body)-1]
+
+				switch d := snake.direction; d {
+				case UP:
+					tail.y--
+				case DOWN:
+					tail.y++
+				case LEFT:
+					tail.x--
+				case RIGHT:
+					tail.x++
+				}
+
+				snake.body = append(snake.body, tail)
+
+				window.Invalidate()
+			}
+		}()
+
 		err := run(window, &snake)
 		if err != nil {
 			log.Fatal(err)
@@ -33,23 +79,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	ticker := time.NewTicker(time.Second)
-	go func() {
-		for range ticker.C {
-			now := time.Now()
-
-			fmt.Println(now)
-		}
-	}()
 	app.Main()
-}
-
-type point struct {
-	x, y int
-}
-
-type Snake struct {
-	body []point
 }
 
 func drawRect(ops *op.Ops, x, y, width, height int) {
