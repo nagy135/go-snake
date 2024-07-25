@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"gioui.org/app"
+	"gioui.org/io/event"
+	"gioui.org/io/input"
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -38,6 +41,33 @@ type Snake struct {
 	direction Direction
 }
 
+var tag = new(bool)
+
+func handleButtons(ops *op.Ops, q input.Source, snake *Snake) {
+	event.Op(ops, tag)
+	for {
+		ev, ok := q.Event(key.Filter{})
+		if !ok {
+			break
+		}
+
+		if x, ok := ev.(key.Event); ok {
+			switch x.Name {
+			case "W":
+				snake.direction = UP
+			case "S":
+				snake.direction = DOWN
+			case "A":
+				snake.direction = LEFT
+			case "D":
+				snake.direction = RIGHT
+			case "Q":
+				os.Exit(0)
+			}
+		}
+	}
+}
+
 func main() {
 
 	snake := Snake{
@@ -48,10 +78,9 @@ func main() {
 	go func() {
 		window := new(app.Window)
 
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(time.Millisecond * 100)
 		go func() {
 			for range ticker.C {
-				fmt.Println(snake.body)
 				snake.body = snake.body[1:len(snake.body)]
 				tail := snake.body[len(snake.body)-1]
 
@@ -102,6 +131,8 @@ func run(window *app.Window, snake *Snake) error {
 			return e.Err
 		case app.FrameEvent:
 			gtx := app.NewContext(&ops, e)
+
+			handleButtons(&ops, e.Source, snake)
 
 			maroon := color.NRGBA{R: 127, G: 0, B: 0, A: 255}
 
