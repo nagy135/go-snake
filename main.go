@@ -1,12 +1,15 @@
 package main
 
 import (
+	"image"
 	"image/color"
 	"log"
 	"os"
 
 	"gioui.org/app"
 	"gioui.org/op"
+	"gioui.org/op/clip"
+	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/widget/material"
 )
@@ -23,6 +26,20 @@ func main() {
 	app.Main()
 }
 
+type point struct {
+	x, y int
+}
+
+type snake struct {
+	body []point
+}
+
+func drawRedRect(ops *op.Ops) {
+	defer clip.Rect{Max: image.Pt(100, 100)}.Push(ops).Pop()
+	paint.ColorOp{Color: color.NRGBA{R: 0x80, A: 0xFF}}.Add(ops)
+	paint.PaintOp{}.Add(ops)
+}
+
 func run(window *app.Window) error {
 	theme := material.NewTheme()
 	var ops op.Ops
@@ -31,23 +48,19 @@ func run(window *app.Window) error {
 		case app.DestroyEvent:
 			return e.Err
 		case app.FrameEvent:
-			// This graphics context is used for managing the rendering state.
 			gtx := app.NewContext(&ops, e)
 
-			// Define an large label with an appropriate text:
 			title := material.H1(theme, "Snake")
 
-			// Change the color of the label.
 			maroon := color.NRGBA{R: 127, G: 0, B: 0, A: 255}
 			title.Color = maroon
 
-			// Change the position of the label.
 			title.Alignment = text.Middle
 
-			// Draw the label to the graphics context.
 			title.Layout(gtx)
 
-			// Pass the drawing operations to the GPU.
+			drawRedRect(&ops)
+
 			e.Frame(gtx.Ops)
 		}
 	}
