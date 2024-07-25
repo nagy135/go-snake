@@ -18,9 +18,11 @@ import (
 	"gioui.org/widget/material"
 )
 
+const CELL_SIZE = 50
+
 func main() {
 
-	snake := Snake{body: []point{{0, 0}, {0, 1}, {0, 2}}}
+	snake := Snake{body: []point{{10, 10}, {10, 11}, {10, 12}, {11, 12}, {12, 12}}}
 
 	go func() {
 		window := new(app.Window)
@@ -35,6 +37,7 @@ func main() {
 	go func() {
 		for range ticker.C {
 			now := time.Now()
+
 			fmt.Println(now)
 		}
 	}()
@@ -49,10 +52,14 @@ type Snake struct {
 	body []point
 }
 
-func drawRedRect(ops *op.Ops) {
-	defer clip.Rect{Max: image.Pt(100, 100)}.Push(ops).Pop()
+func drawRect(ops *op.Ops, x, y, width, height int) {
+	defer clip.Rect{
+		Min: image.Pt(x, y),
+		Max: image.Pt(x+width, y+height),
+	}.Push(ops).Pop()
 	paint.ColorOp{Color: color.NRGBA{R: 0x80, A: 0xFF}}.Add(ops)
 	paint.PaintOp{}.Add(ops)
+
 }
 
 func run(window *app.Window, snake *Snake) error {
@@ -99,7 +106,9 @@ func run(window *app.Window, snake *Snake) error {
 				),
 			)
 
-			// drawRedRect(&ops)
+			for _, v := range snake.body {
+				drawRect(&ops, v.x*CELL_SIZE, v.y*CELL_SIZE, CELL_SIZE, CELL_SIZE)
+			}
 
 			e.Frame(gtx.Ops)
 		}
