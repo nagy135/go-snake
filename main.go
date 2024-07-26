@@ -5,11 +5,11 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"math/rand"
 	"os"
 	"time"
 
 	"gioui.org/app"
-	"gioui.org/io/event"
 	"gioui.org/io/input"
 	"gioui.org/io/key"
 	"gioui.org/layout"
@@ -21,9 +21,12 @@ import (
 	"gioui.org/widget/material"
 )
 
-const CELL_SIZE = 50
+const CELL_SIZE = 20
+const FOOD_DELAY = 5
+const WIDTH = 30
+const HEIGHT = 30
 
-type point struct {
+type Point struct {
 	x, y int
 }
 
@@ -37,14 +40,12 @@ const (
 )
 
 type Snake struct {
-	body      []point
+	body      []Point
+	food      *Point
 	direction Direction
 }
 
-var tag = new(bool)
-
 func handleButtons(ops *op.Ops, q input.Source, snake *Snake) {
-	event.Op(ops, tag)
 	for {
 		ev, ok := q.Event(key.Filter{})
 		if !ok {
@@ -71,16 +72,25 @@ func handleButtons(ops *op.Ops, q input.Source, snake *Snake) {
 func main() {
 
 	snake := Snake{
-		body:      []point{{10, 10}, {10, 11}, {10, 12}, {11, 12}, {12, 12}},
+		body:      []Point{{10, 10}, {10, 11}, {10, 12}, {11, 12}, {12, 12}},
 		direction: RIGHT,
+		food:      &Point{5, 5},
 	}
 
 	go func() {
 		window := new(app.Window)
 
+		window.Option(app.Title("Snake"))
+
 		ticker := time.NewTicker(time.Millisecond * 100)
 		go func() {
+			lastFoodPlacement := time.Now()
 			for range ticker.C {
+				now := time.Now()
+				if now.Sub(lastFoodPlacement) > time.Second*FOOD_DELAY {
+					snake.food = &Point{rand.Intn(WIDTH), rand.Intn(HEIGHT)}
+					lastFoodPlacement = now
+				}
 				snake.body = snake.body[1:len(snake.body)]
 				tail := snake.body[len(snake.body)-1]
 
@@ -107,6 +117,7 @@ func main() {
 		}
 		os.Exit(0)
 	}()
+	app.MaxSize(WIDTH*CELL_SIZE, HEIGHT*CELL_SIZE)
 
 	app.Main()
 }
@@ -169,6 +180,9 @@ func run(window *app.Window, snake *Snake) error {
 
 			for _, v := range snake.body {
 				drawRect(&ops, v.x*CELL_SIZE, v.y*CELL_SIZE, CELL_SIZE, CELL_SIZE)
+			}
+			if snake.food != nil {
+				drawRect(&ops, snake.food.x*CELL_SIZE, snake.food.y*CELL_SIZE, CELL_SIZE, CELL_SIZE)
 			}
 
 			e.Frame(gtx.Ops)
